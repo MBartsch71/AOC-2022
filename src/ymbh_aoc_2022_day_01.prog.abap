@@ -9,9 +9,7 @@ CLASS input_reader IMPLEMENTATION.
 
   METHOD read_file_in_table.
     DATA(file_reader) = NEW zcl_mbh_file_upload( |/Users/mbartsch71/github/AOC-2022/inputs/20221201 | ).
-    DATA(data_tab) = file_reader->file_upload_in_table( expected_table_type = REF #( result ) ).
-    ASSIGN data_tab->* TO FIELD-SYMBOL(<table>).
-    result = <table>.
+    result = file_reader->file_upload_in_stringtab( ).
   ENDMETHOD.
 
 ENDCLASS.
