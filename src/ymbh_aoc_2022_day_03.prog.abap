@@ -1,7 +1,5 @@
 REPORT ymbh_aoc_2022_day_03.
 
-
-
 CLASS input_reader DEFINITION.
   PUBLIC SECTION.
     METHODS read_file_in_table RETURNING VALUE(result) TYPE stringtab.
@@ -80,56 +78,80 @@ CLASS string_tool DEFINITION.
 
     METHODS find_triples IMPORTING input         TYPE stringtab
                          RETURNING VALUE(result) TYPE text1.
+
+  PRIVATE SECTION.
+    METHODS get_letter_from_line IMPORTING line          TYPE string
+                                           read_position TYPE i
+                                 RETURNING VALUE(result) TYPE text1.
+
+    METHODS letter_found_in_line IMPORTING letter        TYPE text1
+                                           line          TYPE string
+                                 RETURNING VALUE(result) TYPE abap_bool.
+
+    METHODS string_length_is_even IMPORTING input         TYPE string
+                                  RETURNING VALUE(result) TYPE abap_bool.
+
+    METHODS find_middle_of_string IMPORTING input         TYPE string
+                                  RETURNING VALUE(result) TYPE i.
+
+    METHODS split_string_in_halve IMPORTING input         TYPE string
+                                  RETURNING VALUE(result) TYPE stringtab.
 ENDCLASS.
 
 CLASS string_tool IMPLEMENTATION.
 
   METHOD halve.
-    IF strlen( input ) MOD 2 = 0.
-
-      DATA(split_pos) = strlen( input ) / 2.
-      result = VALUE #( ( substring( val = input off = 0 len = split_pos ) )
-                        ( substring( val = input off = split_pos len = split_pos ) ) ).
+    IF string_length_is_even( input ).
+      result = split_string_in_halve( input ).
     ENDIF.
   ENDMETHOD.
 
   METHOD find_duplicate.
-    DATA offset TYPE i.
-
-    DO.
-      DATA(letter) = substring( val = input[ 1 ] off = offset len = 1 ).
-      FIND FIRST OCCURRENCE OF letter IN input[ 2 ] RESPECTING CASE.
-      IF sy-subrc = 0.
-        result = letter.
+    DATA(offset) = 0.
+    WHILE offset <= strlen( input[ 1 ] ).
+      DATA(first_line_letter) = get_letter_from_line( line = input[ 1 ] read_position = offset ).
+      IF letter_found_in_line( letter = first_line_letter line = input[ 2 ] ).
+        result = first_line_letter.
         RETURN.
       ENDIF.
       offset = offset + 1.
-      IF offset > strlen( input[ 1 ] ).
-        EXIT.
-      ENDIF.
-    ENDDO.
+    ENDWHILE.
   ENDMETHOD.
 
   METHOD find_triples.
-    DATA offset TYPE i.
-
-    DO.
-      DATA(letter) = substring( val = input[ 1 ] off = offset len = 1 ).
-      FIND FIRST OCCURRENCE OF letter IN input[ 2 ] RESPECTING CASE.
-      IF sy-subrc = 0.
-        FIND FIRST OCCURRENCE OF letter IN input[ 3 ] RESPECTING CASE.
-        IF sy-subrc = 0.
-
-          result = letter.
-          RETURN.
-        ENDIF.
+    DATA(offset) = 0.
+    WHILE offset <= strlen( input[ 1 ] ).
+      DATA(first_line_letter) = get_letter_from_line( line = input[ 1 ] read_position = offset ).
+      IF letter_found_in_line( letter = first_line_letter line = input[ 2 ] ) AND
+         letter_found_in_line( letter = first_line_letter line = input[ 3 ] ).
+        result = first_line_letter.
+        RETURN.
       ENDIF.
       offset = offset + 1.
-      IF offset > strlen( input[ 1 ] ).
-        EXIT.
-      ENDIF.
-    ENDDO.
+    ENDWHILE.
+  ENDMETHOD.
 
+  METHOD get_letter_from_line.
+    result = substring( val = line off = read_position len = 1 ).
+  ENDMETHOD.
+
+  METHOD letter_found_in_line.
+    FIND FIRST OCCURRENCE OF letter IN line RESPECTING CASE.
+    result = xsdbool( sy-subrc = 0 ).
+  ENDMETHOD.
+
+  METHOD string_length_is_even.
+    result = xsdbool( strlen( input ) MOD 2 = 0 ).
+  ENDMETHOD.
+
+  METHOD split_string_in_halve.
+    DATA(split_pos) = find_middle_of_string( input ).
+    result = VALUE #( ( substring( val = input off = 0 len = split_pos ) )
+                      ( substring( val = input off = split_pos len = split_pos ) ) ).
+  ENDMETHOD.
+
+  METHOD find_middle_of_string.
+    result = strlen( input ) / 2.
   ENDMETHOD.
 
 ENDCLASS.
@@ -158,6 +180,12 @@ CLASS text_parser DEFINITION FINAL.
     DATA prioritytool TYPE REF TO priority.
 
     METHODS build_groups_of_three RETURNING VALUE(result) TYPE stringgroups.
+    METHODS build_group
+      IMPORTING
+        start_line    TYPE i
+        source_table  TYPE stringtab
+      RETURNING
+        VALUE(result) TYPE stringtab.
 
 ENDCLASS.
 
@@ -176,7 +204,6 @@ CLASS text_parser IMPLEMENTATION.
       DATA(double_letter) = stringtool->find_duplicate( substrings ).
       APPEND double_letter TO result.
     ENDLOOP.
-
   ENDMETHOD.
 
   METHOD get_priority_sum.
@@ -185,29 +212,24 @@ CLASS text_parser IMPLEMENTATION.
                        NEXT sum = sum + prioritytool->get_priority_for( CONV #( line ) ) ).
   ENDMETHOD.
 
-
   METHOD build_groups_of_three.
-    DATA(line_end) = lines( content ).
     DATA start_line TYPE i VALUE 1.
-    DATA part TYPE stringtab.
-    DO.
-      part = VALUE #( FOR i = start_line THEN i + 1 WHILE i <= start_line + 2
-                                      ( content[ i ] ) ).
-      result = VALUE #( BASE result ( group = part ) ).
-      CLEAR part.
+
+    WHILE start_line < lines( content ).
+      result = VALUE #( BASE result ( group = build_group( start_line   = start_line
+                                                           source_table = content ) ) ).
       start_line = start_line + 3.
-      IF start_line >= line_end.
-        EXIT.
-      ENDIF.
-    ENDDO.
+    ENDWHILE.
   ENDMETHOD.
 
-
   METHOD find_triples_in_lines.
-    LOOP AT groups REFERENCE INTO DATA(group_line).
-      DATA(letter) = stringtool->find_triples( group_line->group ).
-      APPEND letter TO result.
-    ENDLOOP.
+    result = VALUE #( FOR line IN groups
+                        ( stringtool->find_triples( line-group ) ) ).
+  ENDMETHOD.
+
+  METHOD build_group.
+    result = VALUE #( FOR i = start_line THEN i + 1 WHILE i <= start_line + 2
+                                                       ( content[ i ] ) ).
   ENDMETHOD.
 
 ENDCLASS.
@@ -309,11 +331,12 @@ CLASS tc_string_parser DEFINITION FINAL FOR TESTING
     DATA cut TYPE REF TO text_parser.
 
     METHODS setup.
-    METHODS parse_text_for_dupliates FOR TESTING.
+
+    METHODS parse_text_for_dupliates       FOR TESTING.
     METHODS get_priority_sum_of_duplicates FOR TESTING.
 
 
-    METHODS parse_text_for_triples FOR TESTING.
+    METHODS parse_text_for_triples       FOR TESTING.
     METHODS get_priority_sum_of_triplets FOR TESTING.
 
 ENDCLASS.
