@@ -4,7 +4,7 @@ Advent of Code 2022
 
 ## Day 1 - Calorie Counting
 - Description
-	- [AOC Day 1](https://adventofcode.com/2022/day/1)
+	- [AOC 2022 Day 1](https://adventofcode.com/2022/day/1)
 
 - Solution part 1: 71502
 - Solution part 2: 208191
@@ -16,7 +16,7 @@ Advent of Code 2022
 	- [Puzzle input](/inputs/20221201/input.txt)
 
 
-## Day - Rock Paper Scissors
+## Day 2 - Rock Paper Scissors
 - Description
 	- [ACO 2022 Day 2](https://adventofcode.com/2022/day/2)
 
@@ -28,3 +28,30 @@ Advent of Code 2022
 
 - Puzzle input file
 	- [Puzzle input](/inputs/20221202/input.txt)
+
+## Day 3 - Rucksack Reorganization
+- Description 
+	- [AOC 2022 Day 3](https://adventofcode.com/2022/day/3)
+	
+- Solution part 1: 7826
+- Solution part 2: 2577
+
+- Solution ABAP Code
+	- [YMBH_AOC_2022_DAY_03.prog.abap](src/ymbh_aoc_2022_day_03.prog.abap)
+
+- Puzzle input file
+	- [Puzzle input](/inputs/20221203/input.txt)
+
+## Day 4 - Camp Cleanup 
+- Description 
+	- [AOC 2022 Day 4](https://adventofcode.com/2022/day/4)
+	
+- Solution part 1: 582
+- Solution part 2: 893
+
+- Solution ABAP Code
+	- [YMBH_AOC_2022_DAY_04.prog.abap](src/ymbh_aoc_2022_day_04.prog.abap)
+
+- Puzzle input file
+	- [Puzzle input](/inputs/20221204/input.txt)
+
