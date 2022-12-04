@@ -37,12 +37,6 @@ CLASS set IMPLEMENTATION.
     resolve_set( input ).
   ENDMETHOD.
 
-  METHOD resolve_set.
-    SPLIT input AT '-' INTO DATA(lower_bound) DATA(upper_bound).
-    elements = VALUE #( FOR i = CONV i( lower_bound ) THEN i + 1 WHILE i <= upper_bound
-                              ( i ) ).
-  ENDMETHOD.
-
   METHOD lower_bound.
     result = elements[ 1 ].
   ENDMETHOD.
@@ -51,57 +45,56 @@ CLASS set IMPLEMENTATION.
     result = elements[ lines( elements ) ].
   ENDMETHOD.
 
+  METHOD resolve_set.
+    SPLIT input AT '-' INTO DATA(lower_bound) DATA(upper_bound).
+    elements = VALUE #( FOR i = CONV i( lower_bound ) THEN i + 1 WHILE i <= upper_bound
+                              ( i ) ).
+  ENDMETHOD.
+
 ENDCLASS.
 
 CLASS set_comparator DEFINITION FINAL.
 
   PUBLIC SECTION.
-    METHODS one_set_is_fully_contained IMPORTING set1          TYPE REF TO set
-                                                 set2          TYPE REF TO set
-                                       RETURNING VALUE(result) TYPE abap_bool.
-    METHODS one_set_is_partially_contained
-      IMPORTING
-        set1          TYPE REF TO set
-        set2          TYPE REF TO set
-      RETURNING
-        VALUE(result) TYPE abap_bool.
+    METHODS constructor IMPORTING set1 TYPE REF TO set
+                                  set2 TYPE REF TO set.
+
+    METHODS one_set_is_fully_contained RETURNING VALUE(result) TYPE abap_bool.
+
+    METHODS one_set_is_partially_contained RETURNING VALUE(result) TYPE abap_bool.
 
   PRIVATE SECTION.
-    METHODS set1_fully_in_set2 IMPORTING set1          TYPE REF TO set
-                                         set2          TYPE REF TO set
-                               RETURNING VALUE(result) TYPE abap_bool.
+    DATA set1 TYPE REF TO set.
+    DATA set2 TYPE REF TO set.
 
+    METHODS set1_fully_in_set2 RETURNING VALUE(result) TYPE abap_bool.
+    METHODS set2_fully_in_set1 RETURNING VALUE(result) TYPE abap_bool.
 
-    METHODS set2_fully_in_set1 IMPORTING set1          TYPE REF TO set
-                                         set2          TYPE REF TO set
-                               RETURNING VALUE(result) TYPE abap_bool.
+    METHODS set1_lower_bound_in_set2 RETURNING VALUE(result) TYPE abap_bool.
+    METHODS set1_upper_bound_in_set2 RETURNING VALUE(result) TYPE abap_bool.
 
-
-    METHODS set1_lower_bound_in_set2 IMPORTING set1          TYPE REF TO set
-                                               set2          TYPE REF TO set
-                                     RETURNING VALUE(result) TYPE abap_bool.
-    METHODS set1_upper_bound_in_set2 IMPORTING set1          TYPE REF TO set
-                                               set2          TYPE REF TO set
-                                     RETURNING VALUE(result) TYPE abap_bool.
-
-    METHODS set2_lower_bound_in_set1 IMPORTING set1          TYPE REF TO set
-                                               set2          TYPE REF TO set
-                                     RETURNING VALUE(result) TYPE abap_bool.
-    METHODS set2_upper_bound_in_set1 IMPORTING set1          TYPE REF TO set
-                                               set2          TYPE REF TO set
-                                     RETURNING VALUE(result) TYPE abap_bool.
-
+    METHODS set2_lower_bound_in_set1 RETURNING VALUE(result) TYPE abap_bool.
+    METHODS set2_upper_bound_in_set1 RETURNING VALUE(result) TYPE abap_bool.
 
 ENDCLASS.
 
 CLASS set_comparator IMPLEMENTATION.
 
+  METHOD constructor.
+    me->set1 = set1.
+    me->set2 = set2.
+  ENDMETHOD.
+
   METHOD one_set_is_fully_contained.
-    result = set1_fully_in_set2( set1 = set1 set2 = set2 ).
-    IF result = abap_true.
-      RETURN.
-    ENDIF.
-    result = set2_fully_in_set1( set1 = set1 set2 = set2 ).
+    result = xsdbool( set1_fully_in_set2( ) OR
+                      set2_fully_in_set1( ) ).
+  ENDMETHOD.
+
+  METHOD one_set_is_partially_contained.
+    result = xsdbool( set1_lower_bound_in_set2( ) OR
+                      set1_upper_bound_in_set2( ) OR
+                      set2_lower_bound_in_set1( ) OR
+                      set2_upper_bound_in_set1( ) ).
   ENDMETHOD.
 
   METHOD set1_fully_in_set2.
@@ -112,15 +105,6 @@ CLASS set_comparator IMPLEMENTATION.
   METHOD set2_fully_in_set1.
     result = xsdbool( set2->lower_bound( ) >= set1->lower_bound( ) AND
                       set2->upper_bound( ) <= set1->upper_bound( ) ).
-  ENDMETHOD.
-
-
-  METHOD one_set_is_partially_contained.
-    DATA(result1) = set1_lower_bound_in_set2( set1 = set1 set2 = set2 ).
-    DATA(result2) = set1_upper_bound_in_set2( set1 = set1 set2 = set2 ).
-    DATA(result3) = set2_lower_bound_in_set1( set1 = set1 set2 = set2 ).
-    DATA(result4) = set2_upper_bound_in_set1( set1 = set1 set2 = set2 ).
-    result = xsdbool( result1 = abap_true OR result2 = abap_true OR result3 = abap_true OR result4 = abap_true ).
   ENDMETHOD.
 
   METHOD set1_lower_bound_in_set2.
@@ -148,46 +132,37 @@ ENDCLASS.
 CLASS set_list DEFINITION FINAL.
 
   PUBLIC SECTION.
-    METHODS overlapping_set_count IMPORTING input         TYPE stringtab
-                                  RETURNING VALUE(result) TYPE i.
-    METHODS partially_overlapping_sets
-      IMPORTING
-        input         TYPE stringtab
-      RETURNING
-        VALUE(result) TYPE i.
+    METHODS fully_overlapping_sets_count IMPORTING input         TYPE stringtab
+                                         RETURNING VALUE(result) TYPE i.
 
+    METHODS part_overlapping_sets_count IMPORTING input         TYPE stringtab
+                                        RETURNING VALUE(result) TYPE i.
   PRIVATE SECTION.
+    METHODS compare_from_line IMPORTING line          TYPE string
+                              RETURNING VALUE(result) TYPE REF TO set_comparator.
 
 ENDCLASS.
 
 CLASS set_list IMPLEMENTATION.
 
-  METHOD overlapping_set_count.
-    DATA first_set TYPE string.
-    DATA second_set TYPE string.
-    LOOP AT input REFERENCE INTO DATA(line).
-      SPLIT line->* AT ',' INTO first_set second_set.
-      DATA(set1) = NEW set( first_set ).
-      DATA(set2) = NEW set( second_set ).
-      DATA(one_set_is_contained) = NEW set_comparator( )->one_set_is_fully_contained( set1 = set1 set2 = set2 ).
-      IF one_set_is_contained =  abap_true.
-        result = result + 1.
-      ENDIF.
-    ENDLOOP.
+  METHOD fully_overlapping_sets_count.
+    result = REDUCE #( INIT sum = 0
+                       FOR line IN input
+                       NEXT sum = COND #( WHEN compare_from_line( line )->one_set_is_fully_contained( ) THEN sum + 1
+                                          ELSE sum ) ).
   ENDMETHOD.
 
-  METHOD partially_overlapping_sets.
-    DATA first_set TYPE string.
-    DATA second_set TYPE string.
-    LOOP AT input REFERENCE INTO DATA(line).
-      SPLIT line->* AT ',' INTO first_set second_set.
-      DATA(set1) = NEW set( first_set ).
-      DATA(set2) = NEW set( second_set ).
-      DATA(one_set_is_contained) = NEW set_comparator( )->one_set_is_partially_contained( set1 = set1 set2 = set2 ).
-      IF one_set_is_contained =  abap_true.
-        result = result + 1.
-      ENDIF.
-    ENDLOOP.
+  METHOD part_overlapping_sets_count.
+    result = REDUCE #( INIT sum = 0
+                       FOR line IN input
+                       NEXT sum = COND #( WHEN compare_from_line( line )->one_set_is_partially_contained( ) THEN sum + 1
+                                          ELSE sum ) ).
+  ENDMETHOD.
+
+  METHOD compare_from_line.
+    SPLIT line AT ',' INTO DATA(first_set) DATA(second_set).
+    result = NEW #( set1 = NEW #( first_set )
+                    set2 = NEW #( second_set ) ).
   ENDMETHOD.
 
 ENDCLASS.
@@ -198,7 +173,6 @@ CLASS tc_elements DEFINITION FINAL FOR TESTING
 
   PRIVATE SECTION.
     DATA cut TYPE REF TO set.
-    TYPES set_elements TYPE SORTED TABLE OF i WITH NON-UNIQUE KEY primary_key COMPONENTS table_line.
 
     METHODS setup.
     METHODS get_lower_bound_of_set FOR TESTING.
@@ -229,46 +203,34 @@ CLASS tc_set_comparator DEFINITION FINAL FOR TESTING
   PRIVATE SECTION.
     DATA cut TYPE REF TO set_comparator.
 
-    METHODS setup.
     METHODS set_1_is_fully_in_set_2 FOR TESTING.
     METHODS set_2_is_fully_in_set_1 FOR TESTING.
 
     METHODS set_1_is_partially_in_set_2 FOR TESTING.
     METHODS set_2_is_partially_in_set_1 FOR TESTING.
+
 ENDCLASS.
 
 CLASS tc_set_comparator IMPLEMENTATION.
 
-  METHOD setup.
-    cut = NEW #( ).
-  ENDMETHOD.
-
   METHOD set_1_is_fully_in_set_2.
-    DATA(set_1) = NEW set( |6-6| ).
-    DATA(set_2) = NEW set( |4-6| ).
-
-    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_fully_contained( set1 = set_1 set2 = set_2 ) ).
+    cut = NEW #( set1 = NEW #( |6-6| ) set2 = NEW #( |4-6| ) ).
+    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_fully_contained( ) ).
   ENDMETHOD.
 
   METHOD set_2_is_fully_in_set_1.
-    DATA(set_1) = NEW set( |2-8| ).
-    DATA(set_2) = NEW set( |3-7| ).
-
-    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_fully_contained( set1 = set_1 set2 = set_2 ) ).
+    cut = NEW #( set1 = NEW #( |2-8| ) set2 = NEW #( |3-7| ) ).
+    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_fully_contained( ) ).
   ENDMETHOD.
 
   METHOD set_1_is_partially_in_set_2.
-    DATA(set_1) = NEW set( |5-7| ).
-    DATA(set_2) = NEW set( |7-9| ).
-
-    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_partially_contained( set1 = set_1 set2 = set_2 ) ).
+    cut = NEW #( set1 = NEW #( |5-7| ) set2 = NEW #( |7-9| ) ).
+    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_partially_contained( ) ).
   ENDMETHOD.
 
   METHOD set_2_is_partially_in_set_1.
-    DATA(set_1) = NEW set( |2-8| ).
-    DATA(set_2) = NEW set( |3-7| ).
-
-    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_partially_contained( set1 = set_1 set2 = set_2 ) ).
+    cut = NEW #( set1 = NEW #( |2-8| ) set2 = NEW #( |3-7| ) ).
+    cl_abap_unit_assert=>assert_true( act = cut->one_set_is_partially_contained( ) ).
   ENDMETHOD.
 
 ENDCLASS.
@@ -299,21 +261,19 @@ CLASS tc_set_list IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD fully_overlapping_sets_count.
-    cl_abap_unit_assert=>assert_equals( exp = 2 act = cut->overlapping_set_count( input_list )  ).
+    cl_abap_unit_assert=>assert_equals( exp = 2 act = cut->fully_overlapping_sets_count( input_list )  ).
   ENDMETHOD.
 
   METHOD partially_overlapping_sets.
-    cl_abap_unit_assert=>assert_equals( exp = 4 act = cut->partially_overlapping_sets( input_list )  ).
+    cl_abap_unit_assert=>assert_equals( exp = 4 act = cut->part_overlapping_sets_count( input_list )  ).
   ENDMETHOD.
 
 ENDCLASS.
-
-
 
 START-OF-SELECTION.
   DATA(input) = NEW input_reader( )->read_file_in_table( ).
 
   DATA(set_list) = NEW set_list( ).
-  WRITE / |Solution part 1: { set_list->overlapping_set_count( input ) }|.
+  WRITE / |Solution part 1: { set_list->fully_overlapping_sets_count( input ) }|.
 
-  WRITE / |Solution part 2: { set_list->partially_overlapping_sets( input ) }|.
+  WRITE / |Solution part 2: { set_list->part_overlapping_sets_count( input ) }|.
