@@ -55,3 +55,15 @@ Advent of Code 2022
 - Puzzle input file
 	- [Puzzle input](/inputs/20221204/input.txt)
 
+## Day 5 - Supply Stacks 
+- Description 
+	- [AOC 2022 Day 5](https://adventofcode.com/2022/day/5)
+	
+- Solution part 1: JRVNHHCSJ
+- Solution part 2: GNFBSBJLH
+
+- Solution ABAP Code
+	- [YMBH_AOC_2022_DAY_05.prog.abap](src/ymbh_aoc_2022_day_05.prog.abap)
+
+- Puzzle input file
+	- [Puzzle input](/inputs/20221205/input.txt)
