@@ -67,3 +67,16 @@ Advent of Code 2022
 
 - Puzzle input file
 	- [Puzzle input](/inputs/20221205/input.txt)
+
+## Day 6 - Tuning Trouble 
+- Description 
+	- [AOC 2022 Day 6](https://adventofcode.com/2022/day/6)
+	
+- Solution part 1: 1175
+- Solution part 2: 3217
+
+- Solution ABAP Code
+	- [YMBH_AOC_2022_DAY_06.prog.abap](src/ymbh_aoc_2022_day_06.prog.abap)
+
+- Puzzle input file
+	- [Puzzle input](/inputs/20221206/input.txt)
