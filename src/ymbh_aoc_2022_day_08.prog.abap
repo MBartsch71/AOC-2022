@@ -1,7 +1,5 @@
 REPORT ymbh_aoc_2022_day_08.
 
-
-
 CLASS tree DEFINITION DEFERRED.
 CLASS trees DEFINITION DEFERRED.
 
@@ -21,7 +19,6 @@ INTERFACE if_trees.
   TYPES trees TYPE SORTED TABLE OF tree_in_collection WITH UNIQUE KEY primary_key COMPONENTS x_pos y_pos.
 
 ENDINTERFACE.
-
 
 CLASS input_reader DEFINITION.
   PUBLIC SECTION.
@@ -144,7 +141,6 @@ CLASS trees DEFINITION FINAL.
     METHODS get_bottom_border RETURNING VALUE(result) TYPE i.
     METHODS get_right_border RETURNING VALUE(result) TYPE i.
 
-    METHODS build_forest.
     METHODS reset_current_tree.
 
   PRIVATE SECTION.
@@ -235,10 +231,6 @@ CLASS trees IMPLEMENTATION.
 
   METHOD get_bottom_border.
     result = tree_coll[ lines( tree_coll ) ]-y_pos.
-  ENDMETHOD.
-
-  METHOD build_forest.
-    forest = NEW #( me ).
   ENDMETHOD.
 
   METHOD has_next.
@@ -377,7 +369,6 @@ CLASS input_processor IMPLEMENTATION.
     me->input = input.
     trees = NEW #( ).
     process_input( ).
-    trees->build_forest( ).
   ENDMETHOD.
 
   METHOD process_input.
@@ -404,13 +395,12 @@ CLASS application DEFINITION FINAL.
 
   PUBLIC SECTION.
     METHODS constructor IMPORTING input TYPE stringtab.
+
     METHODS main.
-    METHODS check_invisibility
-      RETURNING
-        VALUE(result) TYPE i.
-    METHODS check_visibility
-      RETURNING
-        VALUE(result) TYPE i.
+
+    METHODS check_invisibility RETURNING VALUE(result) TYPE i.
+
+    METHODS check_visibility RETURNING VALUE(result) TYPE i.
 
   PRIVATE SECTION.
     DATA input TYPE stringtab.
@@ -537,7 +527,7 @@ CLASS tc_input_processor DEFINITION FINAL FOR TESTING
     METHODS setup.
 
     METHODS create_tree_coll_from_input FOR TESTING.
-    METHODS get_specific_tree FOR TESTING.
+    METHODS get_specific_tree           FOR TESTING.
 
 ENDCLASS.
 
@@ -575,8 +565,8 @@ CLASS tc_forest DEFINITION FINAL FOR TESTING
 
     METHODS get_trees_southward FOR TESTING.
     METHODS get_trees_northward FOR TESTING.
-    METHODS get_trees_eastward FOR TESTING.
-    METHODS get_trees_westward FOR TESTING.
+    METHODS get_trees_eastward  FOR TESTING.
+    METHODS get_trees_westward  FOR TESTING.
 
 ENDCLASS.
 
