@@ -80,3 +80,29 @@ Advent of Code 2022
 
 - Puzzle input file
 	- [Puzzle input](/inputs/20221206/input.txt)
+
+## Day 7 - (tbd)
+- Description 
+	- [AOC 2022 Day 7](https://adventofcode.com/2022/day/7)
+	
+- Solution part 1: 
+- Solution part 2: 
+
+- Solution ABAP Code
+	- [YMBH_AOC_2022_DAY_07.prog.abap](src/ymbh_aoc_2022_day_07.prog.abap)
+
+- Puzzle input file
+	- [Puzzle input](/inputs/20221207/input.txt)
+
+## Day 8 - Treetop Tree House
+- Description 
+	- [AOC 2022 Day 8](https://adventofcode.com/2022/day/8)
+	
+- Solution part 1: 1818 
+- Solution part 2: 368368
+
+- Solution ABAP Code
+	- [YMBH_AOC_2022_DAY_08.prog.abap](src/ymbh_aoc_2022_day_08.prog.abap)
+
+- Puzzle input file
+	- [Puzzle input](/inputs/20221208/input.txt)
